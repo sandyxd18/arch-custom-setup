@@ -26,6 +26,26 @@ chmod +x kernel_manager.sh
 Choose the kernel, I prefer to choose `linux-cachyos-bore`
 
 ## Option 2: Choose Kernal Via Pacman
+### Install the kernel
 ```sh
 sudo pacman -Sy linux-cachyos-bore
+```
+
+### Change GRUB config
+```sh
+sudo nano /etc/default/grub
+```
+```conf
+GRUB_DEFAULT=saved
+GRUB_SAVEDEFAULT=true
+```
+
+### Regenerate GRUB config
+```sh
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+```
+
+### Reboot the system
+```sh
+sudo reboot
 ```
