@@ -1,0 +1,6 @@
+1. Install Arch Linux
+2. Setup yay
+3. Install CachyOS kernel (bore)
+4. Setup Secure Boot
+5. Install Nvidia Driver
+6. Install Hyprland

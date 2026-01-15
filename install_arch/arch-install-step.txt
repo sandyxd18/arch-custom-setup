@@ -1,0 +1,147 @@
+iwctl
+device list 
+station wlan0 connect SXD-Wifi-2.4
+
+lsblk
+dd if=/dev/urandom of=/dev/sda bs=4096 status=progress
+
+gdisk /dev/sda
+p
+n
+default
+default
++512M
+L
+ef00
+p
+
+n
+default
+default
++4G
+L
+ef02
+p
+
+n
+default
+default
+default
+L
+8309
+p
+w
+Y
+
+modprobe dm-crypt
+modprobe dm-mod
+
+cryptsetup luksFormat -v -s 512 -h sha512 /dev/sda3
+YES
+passphrase
+verify
+
+cryptsetup open /dev/sda3 luks_lvm
+passphrase
+pvcreate /dev/mapper/luks_lvm
+vgcreate arch /dev/mapper/luks_lvm
+lvcreate -n swap -L 34G -C y arch
+lvcreate -n root -l +100%FREE arch
+lvs
+
+mkfs.fat -F 32 /dev/sda1
+mkfs.btrfs -L root /dev/mapper/arch-root
+mkswap /dev/mapper/arch-swap
+
+swapon /dev/mapper/arch-swap
+swapon -a 
+mount /dev/mapper/arch-root /mnt
+mkdir -p /mnt/boot
+mount /dev/sda2 /mnt/boot
+mkdir /mnt/boot/efi
+mount /dev/sda1 /mnt/boot/efi
+lsblk
+
+pacstrap -K /mnt base linux linux-firmware
+genfstab -U -p /mnt > /mnt/etc/fstab
+arch-chroot /mnt /bin/bash
+pacman -Sy base-devel
+pacman -Sy nano
+
+nano /etc/mkinitcpio.conf
+HOOKS=(base udev autodetect modconf kms keyboard keymap consolefont block encrypt lvm2 filesystems fsck)
+
+pacman -Sy lvm2
+pacman -Sy grub efibootmgr
+grub-install --efi-directory=/boot/efi
+
+blkid /dev/sda3
+# copy the uuid
+
+nano /etc/default/grub
+GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet root=/dev/mapper/arch-root cryptdevice=UUID=<your disk uuid>:luks_lvm"
+
+mkdir /secure
+dd if=/dev/random of=/secure/root_keyfile.bin bs=512 count=8
+ls /secure
+chmod 000 /secure/*
+chmod 600 /boot/initramfs-linux*
+cryptsetup luksAddkey /dev/sda3 /secure/root_keyfile.bin
+passphrase
+
+nano /etc/mkinitcpio.conf
+FILES=(/secure/root_keyfile.bin)
+
+mkinitcpio -p linux
+grub-mkconfig -o /boot/grub/grub.cfg
+grub-mkconfig -o /boot/efi/EFI/arch/grub.cfg
+
+ln -sf /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
+
+nano /etc/systemd/timesyncd.conf
+NTP=0.arch.pool.ntp.org 1.arch.pool.ntp.org 2.arch.pool.ntp.org 3.arch.pool.ntp.org
+FallbackNTP=0.pool.ntp.org 1.pool.ntp.org
+
+systemctl enable systemd-timesyncd.service
+
+nano /etc/locale.gen
+en_US.UTF-8 UTF-8
+locale-gen
+
+nano /etc/locale.conf
+LANG=en_US.UTF-8
+
+nano /etc/hostname
+IdeaPad-Gaming-3-15IAH7
+
+passwd
+password
+verify
+
+useradd -m -G wheel -s /bin/bash sandy
+passwd sandy
+password
+verify
+
+export EDITOR=nano
+visudo
+%wheel ALL=(ALL:ALL) ALL
+sandy ALL=(ALL:ALL) NOPASSWD:ALL
+
+pacman -Sy networkmanager
+systemctl enable NetworkManager
+
+pacman -S gnome
+default
+ttf-joypixels
+pipewire-jack
+Y
+
+systemctl enable gdm
+
+pacman -Sy amd-ucode # for amd
+pacman -Sy intel-ucode
+grub-mkconfig -o /boot/grub/grub.cfg
+exit
+umount -R /mnt
+reboot

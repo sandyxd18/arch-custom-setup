@@ -1,0 +1,80 @@
+cfdisk
+NEW
+100M
+QUIT
+NEW
+4G
+QUIT
+NEW
+#free space
+QUIT
+QUIT
+
+mkfs.ext4 /dev/sda3
+mkfs.fat -F 32 /dev/sda1
+mkswap /dev/sda2
+
+mkdir -p /mnt/boot/efi
+mount /dev/sda3 /mnt
+mount /dev/sda1 /mnt/boot/efi
+swapon /dev/sda2
+lsblk
+
+pacstrap /mnt base linux linux-firmware sof-firmware base-devel grub efibootmgr nano networkmanager
+
+genfstab /mnt
+genfstab /mnt > /mnt/etc/fstab
+cat /mnt/etc/fstab
+
+arch-chroot /mnt
+
+ln -sf /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
+date
+hwclock --systohc
+
+nano /etc/locale.gen
+en_US.UTF-8 UTF-8
+locale-gen
+
+nano /etc/locale.conf
+LANG=en_US.UTF-8
+
+nano /etc/hostname
+IdeaPad-Gaming-3-15IAH7
+
+passwd
+password
+verify
+
+useradd -m -G wheel -s /bin/bash sandy
+passwd sandy
+password
+verify
+
+EDITOR=nano
+visudo
+%wheel ALL=(ALL:ALL) ALL
+sandy ALL=(ALL:ALL) NOPASSWD:ALL
+
+su sandy
+sudo pacman -Syu
+
+exit
+
+systemctl enable NetworkManager
+
+grub-install /dev/sda
+grub-mkconfig -o /boot/grub/grub.cfg
+exit
+umount -a
+
+reboot
+
+sudo pacman -S plasma sddm
+1
+1
+Y
+
+sudo pacman -S konsole kate firefox
+sudo systemctl enable sddm
+sudo systemctl enable --now sddm
