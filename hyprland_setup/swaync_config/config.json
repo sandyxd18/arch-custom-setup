@@ -41,7 +41,7 @@
     }
   },
   "widgets": [
-    "label",
+    // "label",
     "buttons-grid",
     "mpris",
     "title",

@@ -438,4 +438,6 @@ swww img ~/Pictures/Wallpapers/od_tux.png --transition-type center
 git clone https://github.com/zDyant/HyprNova.git --depth=1
 cp -r HyprNova/.config/swaync ~/.config
 cd ~/.config/swaync
-
+cd swaync_config/
+cp -r themes/ config.json style.css
+notify-send hello hello
